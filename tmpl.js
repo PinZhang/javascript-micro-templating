@@ -1,5 +1,10 @@
 // Simple JavaScript Templating
 // John Resig - http://ejohn.org/ - MIT Licensed
+// http://ejohn.org/blog/javascript-micro-templating/
+//
+// new feature:
+//   - escape "<" and ">" by default.
+//   - set __NOESCAPING__ in data to pass escaping.
 (function(){
   var cache = {};
 
@@ -16,19 +21,25 @@
         "var p=[],print=function(){p.push.apply(p,arguments);};" +
 
         // Introduce the data as local variables using with(){}
-        "with(obj){p.push('" +
+        "with(obj){" +
+
+        // escape < >
+        "function _q(s){if(typeof __NOESCAPING__!='undefined'&&__NOESCAPING__)" +
+        " return s; if(!s || !isNaN(s))return s; " +
+        " return s.replace(/</g, '&lt;').replace(/>/g, '&gt;'); };" +
+
+        "p.push('" +
 
         // Convert the template into pure JavaScript
         str
           .replace(/[\r\t\n]/g, " ")
           .split("<%").join("\t")
           .replace(/((^|%>)[^\t]*)'/g, "$1\r")
-          .replace(/\t=(.*?)%>/g, "',$1,'")
+          .replace(/\t=(.*?)%>/g, "',_q($1),'")
           .split("\t").join("');")
           .split("%>").join("p.push('")
           .split("\r").join("\\'")
       + "');}return p.join('');");
-
     // Provide some basic currying to the user
     return data ? fn( data ) : fn;
   };
